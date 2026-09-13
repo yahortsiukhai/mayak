@@ -33,7 +33,6 @@ class Monitor(Base):
     # ============================================
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
 
-    # Внешний ключ на users.id
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
@@ -44,7 +43,6 @@ class Monitor(Base):
 
     url: Mapped[str] = mapped_column(String(2048), nullable=False)
 
-    # Интервал проверки в секундах (по умолчанию 5 минут)
     check_interval: Mapped[int] = mapped_column(Integer, default=300, nullable=False)
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
@@ -56,11 +54,15 @@ class Monitor(Base):
     )
 
     # ============================================
-    # Связь с User
+    # Связи
     # ============================================
-    # back_populates создаёт двустороннюю связь:
-    # Monitor.user <-> User.monitors
     user: Mapped["User"] = relationship("User", back_populates="monitors")
+
+    checks: Mapped[list["Check"]] = relationship(
+        "Check",
+        back_populates="monitor",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:
         return f"<Monitor(id={self.id}, name={self.name}, url={self.url})>"
