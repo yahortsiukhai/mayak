@@ -39,6 +39,11 @@ class Settings(BaseSettings):
     debug: bool = True
     secret_key: str = "change-me"
 
+        # JWT
+    jwt_secret_key: str = "change-me-in-production"
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = 30
+
     # ============================================
     # База данных
     # ============================================

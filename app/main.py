@@ -13,6 +13,7 @@ from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from starlette.responses import Response
 
 from app.config import settings
+from app.routers import auth, users, monitors
 
 
 # ============================================
@@ -24,6 +25,10 @@ app = FastAPI(
     version="0.1.0",
     debug=settings.debug,
 )
+# Подключаем роутеры
+app.include_router(auth.router)
+app.include_router(users.router)
+app.include_router(monitors.router)
 
 
 # ============================================

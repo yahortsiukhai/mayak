@@ -8,7 +8,7 @@
 from datetime import datetime
 
 from sqlalchemy import String, Boolean, DateTime, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 
@@ -30,11 +30,8 @@ class User(Base):
     # ============================================
     # Столбцы таблицы
     # ============================================
-
-    # Первичный ключ — автоинкрементное целое число
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
 
-    # Email: строка до 255 символов, уникальная, индексируется
     email: Mapped[str] = mapped_column(
         String(255),
         unique=True,
@@ -42,20 +39,23 @@ class User(Base):
         nullable=False,
     )
 
-    # Хэш пароля (не сам пароль!)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
 
-    # Активен ли аккаунт (для soft-delete)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    # Дата регистрации (автоматически)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        server_default=func.now(),   # БД сама ставит текущее время
+        server_default=func.now(),
     )
 
     # ============================================
-    # Представление для отладки
+    # Связь с Monitor (один-ко-многим)
     # ============================================
+    monitors: Mapped[list["Monitor"]] = relationship(
+        "Monitor",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
     def __repr__(self) -> str:
         return f"<User(id={self.id}, email={self.email})>"

@@ -1,10 +1,8 @@
 """
 Регистрация всех моделей SQLAlchemy.
-
-Импортируй сюда каждую модель — Alembic будет видеть их
-при создании миграций.
 """
 
 from app.models.user import User
+from app.models.monitor import Monitor
 
-__all__ = ["User"]
+__all__ = ["User", "Monitor"]
