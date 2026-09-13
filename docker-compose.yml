@@ -1,0 +1,59 @@
+# ============================================
+# Docker Compose для разработки «Маяк»
+# ============================================
+# Запускает Postgres и Redis.
+# Приложение запускается отдельно (make run).
+#
+# Команды:
+#   make up     — запустить
+#   make down   — остановить
+#   make logs   — смотреть логи
+# ============================================
+
+services:
+  # ==========================================
+  # PostgreSQL — основная база данных
+  # ==========================================
+  postgres:
+    image: postgres:16-alpine      # образ (лёгкий Alpine Linux)
+    container_name: mayak-postgres # имя контейнера
+    restart: unless-stopped        # перезапускать, если упал
+    environment:
+      POSTGRES_USER: mayak         # пользователь БД
+      POSTGRES_PASSWORD: mayak     # пароль (в проде — из секретов!)
+      POSTGRES_DB: mayak           # название БД
+    ports:
+      - "5432:5432"                # порт наружу:внутрь
+    volumes:
+      - mayak_pg_data:/var/lib/postgresql/data  # данные на диске
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mayak"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # Redis — кэш и очередь задач
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: mayak-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - mayak_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+# ============================================
+# Volumes — постоянное хранилище
+# ============================================
+# Docker хранит данные на диске. Даже если удалить контейнер,
+# данные сохранятся в volume.
+volumes:
+  mayak_pg_data:
+  mayak_redis_data:
