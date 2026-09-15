@@ -1,40 +1,22 @@
-# ============================================
-# Docker Compose для разработки «Маяк»
-# ============================================
-# Запускает Postgres и Redis.
-# Приложение запускается отдельно (make run).
-#
-# Команды:
-#   make up     — запустить
-#   make down   — остановить
-#   make logs   — смотреть логи
-# ============================================
-
 services:
-  # ==========================================
-  # PostgreSQL — основная база данных
-  # ==========================================
   postgres:
-    image: postgres:16-alpine      # образ (лёгкий Alpine Linux)
-    container_name: mayak-postgres # имя контейнера
-    restart: unless-stopped        # перезапускать, если упал
+    image: postgres:16-alpine
+    container_name: mayak-postgres
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: mayak         # пользователь БД
-      POSTGRES_PASSWORD: mayak     # пароль (в проде — из секретов!)
-      POSTGRES_DB: mayak           # название БД
+      POSTGRES_USER: mayak
+      POSTGRES_PASSWORD: mayak
+      POSTGRES_DB: mayak
     ports:
-      - "5432:5432"                # порт наружу:внутрь
+      - "5432:5432"
     volumes:
-      - mayak_pg_data:/var/lib/postgresql/data  # данные на диске
+      - mayak_pg_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U mayak"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  # ==========================================
-  # Redis — кэш и очередь задач
-  # ==========================================
   redis:
     image: redis:7-alpine
     container_name: mayak-redis
@@ -49,11 +31,45 @@ services:
       timeout: 5s
       retries: 5
 
-# ============================================
-# Volumes — постоянное хранилище
-# ============================================
-# Docker хранит данные на диске. Даже если удалить контейнер,
-# данные сохранятся в volume.
+  # ==========================================
+  # Prometheus — собирает метрики
+  # ==========================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: mayak-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - mayak_prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # ==========================================
+  # Grafana — рисует графики
+  # ==========================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: mayak-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - mayak_grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
 volumes:
   mayak_pg_data:
   mayak_redis_data:
+  mayak_prometheus_data:
+  mayak_grafana_data:

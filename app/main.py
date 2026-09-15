@@ -1,16 +1,12 @@
 """
 Главный модуль приложения «Маяк».
 
-Это точка входа: здесь создаётся FastAPI-приложение,
-регистрируются эндпоинты и настраивается middleware.
-
-Запуск:
-    uvicorn app.main:app --reload
+Точка входа: создаётся FastAPI-приложение,
+регистрируются роутеры, метрики, эндпоинты.
 """
 
 from fastapi import FastAPI
-from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
-from starlette.responses import Response
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.config import settings
 from app.routers import auth, users, monitors
@@ -25,10 +21,31 @@ app = FastAPI(
     version="0.1.0",
     debug=settings.debug,
 )
-# Подключаем роутеры
+
+
+# ============================================
+# Подключение роутеров
+# ============================================
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(monitors.router)
+
+
+# ============================================
+# Метрики Prometheus
+# ============================================
+# Автоматически создаёт эндпоинт /metrics, который отдаёт:
+#   - http_requests_total         (счётчик запросов)
+#   - http_request_duration_seconds (время ответа, гистограмма)
+#   - http_requests_in_progress    (запросы в обработке)
+#
+# Prometheus будет забирать эти метрики каждые 15 секунд.
+# include_in_schema=False — скрываем /metrics из Swagger UI.
+Instrumentator().instrument(app).expose(
+    app,
+    endpoint="/metrics",
+    include_in_schema=False,
+)
 
 
 # ============================================
@@ -38,9 +55,7 @@ app.include_router(monitors.router)
 @app.get("/", tags=["system"])
 def root():
     """
-    Главная страница.
-
-    Используется для проверки, что приложение живо.
+    Главная страница — приветствие.
     """
     return {
         "service": settings.app_name,
@@ -53,25 +68,11 @@ def root():
 @app.get("/health", tags=["system"])
 def health():
     """
-    Health-check — проверка здоровья сервиса.
+    Health-check — проверка, что сервис жив.
 
-    Используется Kubernetes, балансировщиками и мониторингом.
+    Используется Kubernetes, балансировщиками, мониторингом.
     """
     return {
         "status": "healthy",
         "environment": settings.app_env,
     }
-
-
-@app.get("/metrics", tags=["system"])
-def metrics():
-    """
-    Метрики в формате Prometheus.
-
-    Prometheus будет регулярно забирать эти метрики
-    и строить графики в Grafana.
-    """
-    return Response(
-        generate_latest(),
-        media_type=CONTENT_TYPE_LATEST,
-    )
