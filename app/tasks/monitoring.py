@@ -2,14 +2,19 @@
 Фоновые задачи мониторинга.
 
 Celery worker выполняет эти функции.
+Проверяет мониторы и шлёт алерты при падении.
 """
 
 import asyncio
+import logging
 
 from app.celery_app import celery_app
 from app.database import SessionLocal
 from app.models import Monitor, Check
 from app.services.checker import check_url
+
+
+logger = logging.getLogger(__name__)
 
 
 # ============================================
@@ -20,9 +25,10 @@ def check_monitor(monitor_id: int) -> dict:
     """
     Проверяет один монитор по ID.
 
-    Синхронная задача (Celery не работает с async).
-    Внутри запускает async-функцию check_url через asyncio.run().
+    Если монитор упал — шлёт алерт в Telegram.
     """
+    from app.tasks.alerts import send_down_alert, send_up_alert
+
     db = SessionLocal()
     try:
         monitor = db.query(Monitor).filter(Monitor.id == monitor_id).first()
@@ -32,7 +38,16 @@ def check_monitor(monitor_id: int) -> dict:
         if not monitor.is_active:
             return {"monitor_id": monitor_id, "skipped": "inactive"}
 
-        # Запускаем асинхронную проверку
+        # Была ли предыдущая проверка неуспешной?
+        last_check = (
+            db.query(Check)
+            .filter(Check.monitor_id == monitor_id)
+            .order_by(Check.checked_at.desc())
+            .first()
+        )
+        was_down = last_check and not last_check.is_success
+
+        # Проверяем URL
         result = asyncio.run(check_url(monitor.url))
 
         # Сохраняем результат
@@ -46,6 +61,25 @@ def check_monitor(monitor_id: int) -> dict:
         db.add(check)
         db.commit()
 
+        # ============================================
+        # Алерты (только при смене статуса)
+        # ============================================
+        if not result.is_success:
+            # Монитор упал
+            if not was_down:
+                # Только что упал — шлём алерт
+                send_down_alert.delay(
+                    monitor.id,
+                    result.error or "Неизвестная ошибка",
+                )
+                logger.info(f"Monitor {monitor_id}: DOWN — алерт отправлен")
+        else:
+            # Монитор работает
+            if was_down:
+                # Только что восстановился
+                send_up_alert.delay(monitor.id)
+                logger.info(f"Monitor {monitor_id}: UP — сообщение отправлено")
+
         return {
             "monitor_id": monitor_id,
             "status_code": result.status_code,
@@ -55,6 +89,7 @@ def check_monitor(monitor_id: int) -> dict:
 
     except Exception as e:
         db.rollback()
+        logger.error(f"Monitor {monitor_id} check failed: {e}")
         return {"monitor_id": monitor_id, "error": str(e)}
     finally:
         db.close()
@@ -76,7 +111,6 @@ def check_all_monitors() -> dict:
 
         count = 0
         for monitor in monitors:
-            # Кидаем задачу в очередь (не выполняем сразу)
             check_monitor.delay(monitor.id)
             count += 1
 

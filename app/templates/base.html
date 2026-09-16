@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Маяк — мониторинг для бизнеса{% endblock %}</title>
+
+    <!-- Tailwind CSS (локально) -->
+    <script src="/static/js/tailwind.js"></script>
+
+    <!-- Минималистичная палитра -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ink: '#09090B',
+                        muted: '#71717A',
+                        faint: '#A1A1AA',
+                        line: '#E4E4E7',
+                        bg: '#FAFAFA',
+                        success: '#16A34A',
+                        danger: '#DC2626',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+                        mono: ['Geist Mono', 'SF Mono', 'Monaco', 'monospace'],
+                    },
+                    letterSpacing: {
+                        tightest: '-0.04em',
+                    },
+                },
+            },
+        }
+    </script>
+
+    <!-- HTMX (локально) -->
+    <script src="/static/js/htmx.min.js"></script>
+
+    <!-- Кастомные стили -->
+    <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body class="bg-white text-ink font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Навигация — минимальная, только текст -->
+    <nav class="border-b border-line">
+        <div class="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-2 text-sm font-semibold tracking-tight">
+                <span class="w-2 h-2 rounded-full bg-ink"></span>
+                <span>Маяк</span>
+            </a>
+
+            <div class="flex items-center gap-6 text-sm">
+                {% if user %}
+                    <a href="/dashboard" class="text-muted hover:text-ink transition">Дашборд</a>
+                    <span class="text-faint">{{ user.email }}</span>
+                    <form method="post" action="/auth/logout-web" class="inline">
+                        <button type="submit" class="text-muted hover:text-ink transition">
+                            Выйти
+                        </button>
+                    </form>
+                {% else %}
+                    <a href="/login" class="text-muted hover:text-ink transition">Войти</a>
+                    <a href="/register" class="px-3 py-1.5 bg-ink text-white rounded-md hover:bg-ink/90 transition text-sm font-medium">
+                        Начать
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-1">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="border-t border-line">
+        <div class="max-w-5xl mx-auto px-6 py-8 flex items-center justify-between text-xs text-faint">
+            <span>© 2026 Маяк</span>
+            <span>Мониторинг для малого бизнеса</span>
+        </div>
+    </footer>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Маяк — мониторинг для бизнеса{% endblock %}
+
+{% block content %}
+
+<!-- ============================================ -->
+<!-- HERO -->
+<!-- ============================================ -->
+<section>
+    <div class="max-w-5xl mx-auto px-6 py-32">
+
+        <!-- Бейдж -->
+        <div class="inline-flex items-center gap-2 text-xs text-muted mb-8 font-mono">
+            <span class="dot dot-success dot-pulse"></span>
+            <span>Сервис работает</span>
+        </div>
+
+        <!-- Заголовок -->
+        <h1 class="text-5xl sm:text-6xl font-semibold tracking-tight mb-6 max-w-3xl">
+            Ваш бизнес всегда на связи
+        </h1>
+
+        <!-- Подзаголовок -->
+        <p class="text-lg text-muted mb-10 max-w-2xl leading-relaxed">
+            Следим за сайтом, кассой и интернетом.
+            Если что-то упадёт — узнаете в Telegram первым.
+            Никаких технических терминов.
+        </p>
+
+        <!-- Кнопки -->
+        <div class="flex flex-wrap gap-3">
+            <a href="/register" class="btn btn-primary">
+                Попробовать бесплатно
+            </a>
+            <a href="/login" class="btn btn-secondary">
+                Войти
+            </a>
+        </div>
+
+        <!-- Мелкий текст -->
+        <p class="text-xs text-faint mt-6 font-mono">
+            Бесплатно до 3 объектов. Без карты.
+        </p>
+
+    </div>
+</section>
+
+<!-- Разделитель -->
+<hr>
+
+<!-- ============================================ -->
+<!-- ПРЕИМУЩЕСТВА -->
+<!-- ============================================ -->
+<section>
+    <div class="max-w-5xl mx-auto px-6 py-24">
+
+        <p class="text-xs font-mono text-faint uppercase tracking-widest mb-3">Преимущества</p>
+        <h2 class="text-3xl font-semibold tracking-tight mb-16 max-w-2xl">
+            Простой мониторинг для тех, кто не разбирается в технологиях
+        </h2>
+
+        <div class="grid md:grid-cols-3 gap-px bg-line border border-line rounded-lg overflow-hidden">
+
+            <div class="bg-white p-8">
+                <p class="feature-num">01</p>
+                <h3 class="text-base font-semibold mb-2">Понятные алерты</h3>
+                <p class="text-sm text-muted leading-relaxed">
+                    Не «connection timeout», а «проверьте хостинг». В Telegram.
+                </p>
+            </div>
+
+            <div class="bg-white p-8">
+                <p class="feature-num">02</p>
+                <h3 class="text-base font-semibold mb-2">Проверка каждую минуту</h3>
+                <p class="text-sm text-muted leading-relaxed">
+                    Узнаете о проблеме сразу, а не от злых клиентов через 2 дня.
+                </p>
+            </div>
+
+            <div class="bg-white p-8">
+                <p class="feature-num">03</p>
+                <h3 class="text-base font-semibold mb-2">Отчёты для клиентов</h3>
+                <p class="text-sm text-muted leading-relaxed">
+                    Агентствам: красивый отчёт об uptime для клиентов.
+                </p>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- Разделитель -->
+<hr>
+
+<!-- ============================================ -->
+<!-- КАК РАБОТАЕТ -->
+<!-- ============================================ -->
+<section class="bg-bg">
+    <div class="max-w-5xl mx-auto px-6 py-24">
+
+        <p class="text-xs font-mono text-faint uppercase tracking-widest mb-3">Процесс</p>
+        <h2 class="text-3xl font-semibold tracking-tight mb-16 max-w-2xl">
+            Как это работает
+        </h2>
+
+        <div class="space-y-12">
+
+            <div class="grid md:grid-cols-12 gap-6 items-start">
+                <div class="md:col-span-2">
+                    <span class="font-mono text-4xl text-faint">01</span>
+                </div>
+                <div class="md:col-span-10">
+                    <h3 class="text-lg font-semibold mb-2">Добавьте сайт</h3>
+                    <p class="text-muted leading-relaxed max-w-xl">
+                        Укажите URL. Всё. Никаких настроек, ключей, сложных форм.
+                    </p>
+                </div>
+            </div>
+
+            <hr>
+
+            <div class="grid md:grid-cols-12 gap-6 items-start">
+                <div class="md:col-span-2">
+                    <span class="font-mono text-4xl text-faint">02</span>
+                </div>
+                <div class="md:col-span-10">
+                    <h3 class="text-lg font-semibold mb-2">Мы проверяем</h3>
+                    <p class="text-muted leading-relaxed max-w-xl">
+                        Каждую минуту делаем запрос и следим за ответом.
+                        Работаем в фоне — вам не нужно ничего запускать.
+                    </p>
+                </div>
+            </div>
+
+            <hr>
+
+            <div class="grid md:grid-cols-12 gap-6 items-start">
+                <div class="md:col-span-2">
+                    <span class="font-mono text-4xl text-faint">03</span>
+                </div>
+                <div class="md:col-span-10">
+                    <h3 class="text-lg font-semibold mb-2">Вы получаете алерт</h3>
+                    <p class="text-muted leading-relaxed max-w-xl">
+                        Если что-то не так — сразу в Telegram.
+                        С понятным объяснением, что проверить.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- ============================================ -->
+<!-- CTA -->
+<!-- ============================================ -->
+<section>
+    <div class="max-w-5xl mx-auto px-6 py-32 text-center">
+        <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">
+            Начните следить за бизнесом
+        </h2>
+        <p class="text-muted mb-8 max-w-lg mx-auto">
+            Бесплатно до 3 объектов. Платите только если понравится.
+        </p>
+        <a href="/register" class="btn btn-primary">
+            Создать аккаунт
+            <span class="text-faint">→</span>
+        </a>
+    </div>
+</section>
+
+{% endblock %}

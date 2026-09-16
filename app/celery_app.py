@@ -19,7 +19,8 @@ celery_app = Celery(
     broker=settings.redis_url,        # откуда брать задачи
     backend=settings.redis_url,       # куда складывать результаты
     include=[
-        "app.tasks.monitoring",       # список модулей с задачами
+        "app.tasks.monitoring",  
+        "app.tasks.alerts",     # список модулей с задачами
     ],
 )
 

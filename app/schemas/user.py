@@ -40,3 +40,4 @@ class UserRead(UserBase):
     id: int
     is_active: bool
     created_at: datetime
+    telegram_chat_id: str | None = None
