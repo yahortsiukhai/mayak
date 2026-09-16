@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Дашборд — Маяк{% endblock %}
+
+{% block content %}
+<section class="max-w-5xl mx-auto px-6 py-12">
+
+    <!-- Заголовок + кнопка -->
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-semibold tracking-tight mb-1">Ваши мониторы</h1>
+            <p class="text-sm text-muted">Следим за {{ monitors_data | length }} {{ 'объектом' if monitors_data | length == 1 else 'объектами' }}</p>
+        </div>
+        <button
+            onclick="document.getElementById('add-modal').classList.remove('hidden')"
+            class="btn btn-primary"
+        >
+            + Добавить
+        </button>
+    </div>
+
+    <!-- Список мониторов -->
+    {% if monitors_data %}
+        <div class="space-y-3">
+
+            {% for item in monitors_data %}
+                {% set m = item.monitor %}
+                {% set lc = item.last_check %}
+
+                <div class="border border-line rounded-lg hover:border-ink/30 transition p-5">
+                    <div class="flex items-start justify-between gap-4">
+
+                        <!-- Левая часть: статус + инфо -->
+                        <div class="flex-1 min-w-0">
+
+                            <!-- Статус + название -->
+                            <div class="flex items-center gap-3 mb-1">
+                                {% if lc and lc.is_success %}
+                                    <span class="dot dot-success"></span>
+                                {% elif lc and not lc.is_success %}
+                                    <span class="dot dot-danger"></span>
+                                {% else %}
+                                    <span class="dot dot-muted"></span>
+                                {% endif %}
+
+                                <h3 class="text-base font-semibold truncate">
+                                    {{ m.name }}
+                                </h3>
+                            </div>
+
+                            <!-- URL -->
+                            <p class="text-sm text-muted font-mono truncate mb-3">
+                                {{ m.url }}
+                            </p>
+
+                            <!-- Мета-данные -->
+                            <div class="flex flex-wrap items-center gap-x-6 gap-y-1 text-xs text-faint">
+                                {% if lc %}
+                                    <span>
+                                        Последняя проверка:
+                                        {% if lc.is_success %}
+                                            <span class="text-success font-medium">✓ {{ lc.response_time_ms }}ms</span>
+                                        {% else %}
+                                            <span class="text-danger font-medium">✗ {{ lc.error or 'Ошибка' }}</span>
+                                        {% endif %}
+                                    </span>
+                                {% else %}
+                                    <span>Проверка ещё не запускалась</span>
+                                {% endif %}
+
+                                {% if item.uptime is not none %}
+                                    <span>Uptime: <span class="text-ink font-medium">{{ item.uptime }}%</span></span>
+                                {% endif %}
+
+                                <span>Проверок: {{ item.total_checks }}</span>
+                            </div>
+
+                        </div>
+
+                        <!-- Правая часть: действия -->
+                        <div class="flex items-center gap-2 shrink-0">
+                            <a
+                                href="/dashboard/monitors/{{ m.id }}"
+                                class="text-sm text-muted hover:text-ink transition px-3 py-1.5"
+                            >
+                                Открыть
+                            </a>
+                            <form method="post" action="/dashboard/monitors/{{ m.id }}/delete" class="inline"
+                                  onsubmit="return confirm('Удалить монитор «{{ m.name }}»?')">
+                                <button type="submit" class="text-sm text-muted hover:text-danger transition px-3 py-1.5">
+                                    Удалить
+                                </button>
+                            </form>
+                        </div>
+
+                    </div>
+                </div>
+            {% endfor %}
+
+        </div>
+    {% else %}
+        <!-- Пустое состояние -->
+        <div class="border border-dashed border-line rounded-lg py-20 text-center">
+            <div class="text-4xl mb-4">📡</div>
+            <h3 class="text-lg font-semibold mb-2">Пока пусто</h3>
+            <p class="text-muted mb-6">Добавьте первый монитор — и мы начнём следить за ним.</p>
+            <button
+                onclick="document.getElementById('add-modal').classList.remove('hidden')"
+                class="btn btn-primary"
+            >
+                + Добавить монитор
+            </button>
+        </div>
+    {% endif %}
+
+</section>
+
+<!-- ============================================ -->
+<!-- МОДАЛЬНОЕ ОКНО: добавление монитора -->
+<!-- ============================================ -->
+<div
+    id="add-modal"
+    class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm items-center justify-center z-50 p-4"
+    onclick="if (event.target === this) this.classList.add('hidden')"
+>
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 fade-in">
+
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-lg font-semibold">Новый монитор</h2>
+            <button
+                onclick="document.getElementById('add-modal').classList.add('hidden')"
+                class="text-muted hover:text-ink transition text-2xl leading-none"
+            >×</button>
+        </div>
+
+        <form method="post" action="/dashboard/monitors" class="space-y-4">
+
+            <div>
+                <label for="name" class="form-label">Название</label>
+                <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    class="form-input"
+                    placeholder="Сайт кофейни"
+                    required
+                    autofocus
+                >
+                <p class="text-xs text-faint mt-1">Как называть этот объект</p>
+            </div>
+
+            <div>
+                <label for="url" class="form-label">URL</label>
+                <input
+                    type="text"
+                    id="url"
+                    name="url"
+                    class="form-input"
+                    placeholder="https://example.com"
+                    required
+                >
+                <p class="text-xs text-faint mt-1">Адрес сайта или сервиса</p>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button type="submit" class="btn btn-primary flex-1">
+                    Добавить
+                </button>
+                <button
+                    type="button"
+                    onclick="document.getElementById('add-modal').classList.add('hidden')"
+                    class="btn btn-secondary"
+                >
+                    Отмена
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+{% endblock %}

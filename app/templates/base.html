@@ -42,7 +42,7 @@
 </head>
 <body class="bg-white text-ink font-sans antialiased min-h-screen flex flex-col">
 
-    <!-- Навигация — минимальная, только текст -->
+    <!-- Навигация -->
     <nav class="border-b border-line">
         <div class="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
             <a href="/" class="flex items-center gap-2 text-sm font-semibold tracking-tight">
@@ -69,10 +69,12 @@
         </div>
     </nav>
 
+    <!-- Основной контент -->
     <main class="flex-1">
         {% block content %}{% endblock %}
     </main>
 
+    <!-- Футер -->
     <footer class="border-t border-line">
         <div class="max-w-5xl mx-auto px-6 py-8 flex items-center justify-between text-xs text-faint">
             <span>© 2026 Маяк</span>

@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}{{ monitor.name }} — Маяк{% endblock %}
+
+{% block content %}
+<section class="max-w-5xl mx-auto px-6 py-12">
+
+    <!-- Навигация назад -->
+    <a href="/dashboard" class="text-sm text-muted hover:text-ink transition inline-flex items-center gap-2 mb-6">
+        ← Назад к дашборду
+    </a>
+
+    <!-- Заголовок -->
+    <div class="flex flex-wrap items-start justify-between gap-4 mb-10">
+
+        <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-3 mb-2">
+                {% if checks and checks[0].is_success %}
+                    <span class="dot dot-success"></span>
+                {% elif checks and not checks[0].is_success %}
+                    <span class="dot dot-danger"></span>
+                {% else %}
+                    <span class="dot dot-muted"></span>
+                {% endif %}
+
+                <h1 class="text-3xl font-semibold tracking-tight">{{ monitor.name }}</h1>
+            </div>
+
+            <p class="text-sm text-muted font-mono truncate">{{ monitor.url }}</p>
+        </div>
+
+        <form method="post" action="/dashboard/monitors/{{ monitor.id }}/check-now">
+            <button type="submit" class="btn btn-primary">
+                Проверить сейчас
+            </button>
+        </form>
+
+    </div>
+
+    <!-- Статистика -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-px bg-line border border-line rounded-lg overflow-hidden mb-10">
+
+        <div class="bg-white p-6">
+            <p class="text-xs text-faint uppercase tracking-widest mb-2">Uptime</p>
+            <p class="text-2xl font-semibold tracking-tight">
+                {% if uptime is not none %}
+                    <span class="{% if uptime >= 99 %}text-success{% elif uptime >= 95 %}text-ink{% else %}text-danger{% endif %}">
+                        {{ uptime }}%
+                    </span>
+                {% else %}
+                    <span class="text-faint">—</span>
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="bg-white p-6">
+            <p class="text-xs text-faint uppercase tracking-widest mb-2">Всего проверок</p>
+            <p class="text-2xl font-semibold tracking-tight">{{ total }}</p>
+        </div>
+
+        <div class="bg-white p-6">
+            <p class="text-xs text-faint uppercase tracking-widest mb-2">Успешных</p>
+            <p class="text-2xl font-semibold tracking-tight text-success">{{ successful }}</p>
+        </div>
+
+        <div class="bg-white p-6">
+            <p class="text-xs text-faint uppercase tracking-widest mb-2">Ср. время</p>
+            <p class="text-2xl font-semibold tracking-tight">
+                {% if avg_time is not none %}
+                    {{ avg_time }}<span class="text-base text-muted ml-1">ms</span>
+                {% else %}
+                    <span class="text-faint">—</span>
+                {% endif %}
+            </p>
+        </div>
+
+    </div>
+
+    <!-- История проверок -->
+    <div>
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-semibold tracking-tight">История проверок</h2>
+            <span class="text-sm text-faint">{{ total }} записей</span>
+        </div>
+
+        {% if checks %}
+            <div class="border border-line rounded-lg overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-bg text-left">
+                            <th class="px-4 py-3 font-medium text-xs uppercase tracking-widest text-faint">Время</th>
+                            <th class="px-4 py-3 font-medium text-xs uppercase tracking-widest text-faint">Статус</th>
+                            <th class="px-4 py-3 font-medium text-xs uppercase tracking-widest text-faint">Код</th>
+                            <th class="px-4 py-3 font-medium text-xs uppercase tracking-widest text-faint">Время ответа</th>
+                            <th class="px-4 py-3 font-medium text-xs uppercase tracking-widest text-faint">Ошибка</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-line">
+                        {% for check in checks %}
+                        <tr class="hover:bg-bg transition">
+                            <td class="px-4 py-3 font-mono text-xs text-muted">
+                                {{ check.checked_at.strftime('%d.%m %H:%M:%S') }}
+                            </td>
+                            <td class="px-4 py-3">
+                                {% if check.is_success %}
+                                    <span class="inline-flex items-center gap-2 text-success font-medium">
+                                        <span class="dot dot-success"></span>
+                                        OK
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center gap-2 text-danger font-medium">
+                                        <span class="dot dot-danger"></span>
+                                        FAIL
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 font-mono text-xs">
+                                {% if check.status_code %}
+                                    <span class="{% if check.status_code < 400 %}text-success{% else %}text-danger{% endif %}">
+                                        {{ check.status_code }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-faint">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 font-mono text-xs">
+                                {% if check.response_time_ms %}
+                                    {{ check.response_time_ms }}ms
+                                {% else %}
+                                    <span class="text-faint">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-xs text-muted truncate max-w-xs">
+                                {{ check.error or '—' }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="border border-dashed border-line rounded-lg py-16 text-center">
+                <div class="text-4xl mb-3">📭</div>
+                <p class="text-muted mb-4">Проверок ещё не было</p>
+                <form method="post" action="/dashboard/monitors/{{ monitor.id }}/check-now">
+                    <button type="submit" class="btn btn-primary">
+                        Запустить первую проверку
+                    </button>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+
+</section>
+{% endblock %}

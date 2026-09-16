@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Вход — Маяк{% endblock %}
+
+{% block content %}
+<section class="max-w-md mx-auto px-6 py-16">
+
+    <h1 class="text-3xl font-semibold tracking-tight mb-2">Вход в аккаунт</h1>
+    <p class="text-muted mb-8">Введите свой email и пароль.</p>
+
+    {% if error %}
+    <div class="alert alert-error mb-6">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="/login" class="space-y-5">
+        <div>
+            <label for="email" class="form-label">Email</label>
+            <input
+                type="email"
+                id="email"
+                name="email"
+                class="form-input"
+                placeholder="you@example.com"
+                required
+                autofocus
+                value="{{ email or '' }}"
+            >
+        </div>
+
+        <div>
+            <label for="password" class="form-label">Пароль</label>
+            <input
+                type="password"
+                id="password"
+                name="password"
+                class="form-input"
+                placeholder="Ваш пароль"
+                required
+            >
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full">
+            Войти
+        </button>
+    </form>
+
+    <p class="text-center text-sm text-muted mt-6">
+        Нет аккаунта?
+        <a href="/register" class="link">Зарегистрироваться</a>
+    </p>
+
+</section>
+{% endblock %}
