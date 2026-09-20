@@ -382,3 +382,126 @@ async def check_now_web(
         f"/dashboard/monitors/{monitor_id}",
         status_code=302,
     )
+# ============================================
+# Настройки профиля
+# ============================================
+@router.get("/settings")
+def settings_page(request: Request):
+    """Страница настроек."""
+    user = get_current_user_from_cookie(request)
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    return render(request, "settings.html", {"current_user": user})
+
+
+@router.post("/settings/telegram")
+def settings_link_telegram(
+    request: Request,
+    chat_id: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    """Привязка Telegram."""
+    user = get_current_user_from_cookie(request)
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    chat_id = chat_id.strip()
+    if not chat_id:
+        return RedirectResponse("/settings?error=empty", status_code=302)
+
+    # Обновляем
+    db_user = db.query(User).filter(User.id == user.id).first()
+    db_user.telegram_chat_id = chat_id
+    db.commit()
+
+    return RedirectResponse("/settings?success=linked", status_code=302)
+
+
+@router.post("/settings/telegram/unlink")
+def settings_unlink_telegram(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Отвязка Telegram."""
+    user = get_current_user_from_cookie(request)
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    db_user = db.query(User).filter(User.id == user.id).first()
+    db_user.telegram_chat_id = None
+    db.commit()
+
+    return RedirectResponse("/settings?success=unlinked", status_code=302)
+
+
+@router.post("/settings/telegram/test")
+async def settings_test_telegram(request: Request):
+    """Отправка тестового сообщения."""
+    from app.services.telegram import send_message, format_test_message
+
+    user = get_current_user_from_cookie(request)
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    if not user.telegram_chat_id:
+        return RedirectResponse("/settings?error=no_chat", status_code=302)
+
+    success = await send_message(user.telegram_chat_id, format_test_message())
+
+    if success:
+        return RedirectResponse("/settings?success=test_sent", status_code=302)
+    else:
+        return RedirectResponse("/settings?error=send_failed", status_code=302)
+    # ============================================
+# Автоматическая привязка Telegram
+# ============================================
+from app.tasks.telegram_poll import generate_link_token
+
+
+@router.post("/settings/telegram/generate-link")
+def settings_generate_link(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Генерирует токен и возвращает ссылку на бота."""
+    user = get_current_user_from_cookie(request)
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    token = generate_link_token()
+
+    db_user = db.query(User).filter(User.id == user.id).first()
+    db_user.telegram_link_token = token
+    db.commit()
+
+    from app.config import settings as app_settings
+    import httpx
+
+    bot_username = "mayak_alerts_bot"
+    try:
+        response = httpx.get(
+            f"https://api.telegram.org/bot{app_settings.telegram_bot_token}/getMe",
+            timeout=5.0,
+        )
+        if response.status_code == 200:
+            bot_username = response.json()["result"]["username"]
+    except Exception:
+        pass
+
+    link = f"https://t.me/{bot_username}?start={token}"
+
+    return {"link": link, "token": token}
+
+
+@router.get("/settings/telegram/status")
+def settings_telegram_status(request: Request):
+    """Проверяет статус привязки."""
+    user = get_current_user_from_cookie(request)
+    if not user:
+        return {"linked": False}
+
+    return {
+        "linked": bool(user.telegram_chat_id),
+        "chat_id": user.telegram_chat_id,
+    }

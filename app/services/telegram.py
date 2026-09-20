@@ -101,3 +101,116 @@ def format_test_message() -> str:
         "Теперь вы будете получать уведомления о падении сайтов.\n\n"
         "<i>Это тестовое сообщение.</i>"
     )
+# ============================================
+# Polling: получение обновлений от Telegram
+# ============================================
+async def get_updates(offset: int | None = None, timeout: int = 5) -> list[dict]:
+    """
+    Получает новые сообщения от Telegram (long polling).
+
+    Args:
+        offset: ID последнего обработанного апдейта (чтобы не получать повторно)
+        timeout: таймаут long polling
+
+    Returns:
+        Список апдейтов.
+    """
+    if not settings.telegram_bot_token:
+        return []
+
+    url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/getUpdates"
+
+    params = {
+        "timeout": timeout,
+        "allowed_updates": ["message"],
+    }
+    if offset:
+        params["offset"] = offset
+
+    try:
+        async with httpx.AsyncClient(timeout=timeout + 5) as client:
+            response = await client.get(url, params=params)
+            data = response.json()
+
+            if not data.get("ok"):
+                logger.error(f"Telegram getUpdates error: {data}")
+                return []
+
+            return data.get("result", [])
+
+    except Exception as e:
+        logger.error(f"Telegram getUpdates exception: {e}")
+        return []
+
+
+async def send_welcome_after_link(chat_id: int, user_email: str) -> None:
+    """Отправляет приветствие после успешной привязки."""
+    text = (
+        f"✅ <b>Маяк подключён!</b>\n\n"
+        f"Аккаунт: <code>{user_email}</code>\n\n"
+        f"Теперь вы будете получать уведомления о падении сайтов.\n\n"
+        f"<i>Проверьте работу настройки — я пришлю тестовое сообщение.</i>"
+    )
+    await send_message(chat_id, text)
+
+
+async def send_invalid_token_message(chat_id: int) -> None:
+    """Сообщение, если токен не найден."""
+    text = (
+        "❌ <b>Не удалось привязать</b>\n\n"
+        "Ссылка недействительна или устарела.\n\n"
+        "Вернитесь на сайт и попробуйте снова."
+    )
+    await send_message(chat_id, text)
+# ============================================
+# Polling: получение обновлений от Telegram
+# ============================================
+async def get_updates(offset: int | None = None, timeout: int = 5) -> list[dict]:
+    """Получает новые сообщения от Telegram (long polling)."""
+    if not settings.telegram_bot_token:
+        return []
+
+    url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/getUpdates"
+
+    params = {
+        "timeout": timeout,
+        "allowed_updates": ["message"],
+    }
+    if offset:
+        params["offset"] = offset
+
+    try:
+        async with httpx.AsyncClient(timeout=timeout + 5) as client:
+            response = await client.get(url, params=params)
+            data = response.json()
+
+            if not data.get("ok"):
+                logger.error(f"Telegram getUpdates error: {data}")
+                return []
+
+            return data.get("result", [])
+
+    except Exception as e:
+        logger.error(f"Telegram getUpdates exception: {e}")
+        return []
+
+
+async def send_welcome_after_link(chat_id: int, user_email: str) -> None:
+    """Отправляет приветствие после успешной привязки."""
+    text = (
+        f"✅ <b>Маяк подключён!</b>\n\n"
+        f"Аккаунт: <code>{user_email}</code>\n\n"
+        f"Теперь вы будете получать уведомления о падении сайтов.\n\n"
+        f"<i>Проверьте работу настройки — я пришлю тестовое сообщение.</i>"
+    )
+    await send_message(chat_id, text)
+
+
+async def send_invalid_token_message(chat_id: int) -> None:
+    """Сообщение, если токен не найден."""
+    text = (
+        "❌ <b>Не удалось привязать</b>\n\n"
+        "Ссылка недействительна или устарела.\n\n"
+        "Вернитесь на сайт и попробуйте снова."
+    )
+    await send_message(chat_id, text)

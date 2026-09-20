@@ -20,7 +20,8 @@ celery_app = Celery(
     backend=settings.redis_url,       # куда складывать результаты
     include=[
         "app.tasks.monitoring",  
-        "app.tasks.alerts",     # список модулей с задачами
+        "app.tasks.alerts",   
+        "app.tasks.telegram_poll",  # список модулей с задачами
     ],
 )
 
@@ -51,13 +52,15 @@ celery_app.conf.update(
 )
 
 
-# ============================================
-# Расписание (Celery Beat)
-# ============================================
 celery_app.conf.beat_schedule = {
-    # Каждый час проверять все активные мониторы
-    "check-all-monitors-hourly": {
+    # Проверка мониторов каждые 5 минут
+    "check-all-monitors": {
         "task": "app.tasks.monitoring.check_all_monitors",
-        "schedule": crontab(minute=0),  # в 00 минут каждого часа
+        "schedule": 300.0,
+    },
+    # Polling Telegram каждые 5 секунд
+    "poll-telegram-updates": {
+        "task": "app.tasks.telegram_poll.poll_updates",
+        "schedule": 5.0,
     },
 }

@@ -47,6 +47,13 @@ class User(Base):
         String(50),
         nullable=True,
     )
+        # Одноразовый токен для привязки Telegram (генерируется при нажатии кнопки)
+    telegram_link_token: Mapped[str | None] = mapped_column(
+        String(64),
+        nullable=True,
+        unique=True,
+        index=True,
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

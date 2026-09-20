@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Настройки — Маяк{% endblock %}
+
+{% block content %}
+<section class="max-w-3xl mx-auto px-6 py-12">
+
+    <h1 class="text-3xl font-semibold tracking-tight mb-8">Настройки</h1>
+
+    <!-- Уведомления -->
+    {% if request.query_params.get('success') == 'linked' %}
+    <div class="alert alert-success mb-6">✓ Telegram привязан</div>
+    {% elif request.query_params.get('success') == 'unlinked' %}
+    <div class="alert alert-info mb-6">Telegram отвязан</div>
+    {% elif request.query_params.get('success') == 'test_sent' %}
+    <div class="alert alert-success mb-6">✓ Тестовое сообщение отправлено — проверьте Telegram</div>
+    {% elif request.query_params.get('error') == 'empty' %}
+    <div class="alert alert-error mb-6">Chat ID не может быть пустым</div>
+    {% elif request.query_params.get('error') == 'send_failed' %}
+    <div class="alert alert-error mb-6">Не удалось отправить сообщение — проверьте chat_id</div>
+    {% elif request.query_params.get('error') == 'no_chat' %}
+    <div class="alert alert-error mb-6">Сначала привяжите Telegram</div>
+    {% endif %}
+
+    <!-- Профиль -->
+    <div class="border border-line rounded-lg p-6 mb-6">
+        <h2 class="text-sm font-medium uppercase tracking-widest text-faint mb-4">Профиль</h2>
+
+        <div class="space-y-3 text-sm">
+            <div class="flex justify-between">
+                <span class="text-muted">Email</span>
+                <span class="font-medium">{{ current_user.email }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-muted">Дата регистрации</span>
+                <span class="font-medium font-mono text-xs">
+                    {{ current_user.created_at.strftime('%d.%m.%Y') }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Telegram -->
+    <div class="border border-line rounded-lg p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-medium uppercase tracking-widest text-faint">Telegram-уведомления</h2>
+            {% if current_user.telegram_chat_id %}
+                <span class="inline-flex items-center gap-2 text-xs text-success font-medium">
+                    <span class="dot dot-success"></span>
+                    Привязан
+                </span>
+            {% else %}
+                <span class="inline-flex items-center gap-2 text-xs text-faint">
+                    <span class="dot dot-muted"></span>
+                    Не привязан
+                </span>
+            {% endif %}
+        </div>
+
+        {% if current_user.telegram_chat_id %}
+            <!-- ============================ -->
+            <!-- УЖЕ ПРИВЯЗАН -->
+            <!-- ============================ -->
+            <div class="space-y-4">
+                <div class="flex justify-between items-center py-3 border-t border-line">
+                    <span class="text-sm text-muted">Chat ID</span>
+                    <span class="font-mono text-sm">{{ current_user.telegram_chat_id }}</span>
+                </div>
+
+                <div class="flex flex-wrap gap-3 pt-3">
+                    <form method="post" action="/settings/telegram/test" class="inline">
+                        <button type="submit" class="btn btn-secondary text-sm">
+                            Отправить тест
+                        </button>
+                    </form>
+                    <form method="post" action="/settings/telegram/unlink" class="inline"
+                          onsubmit="return confirm('Отвязать Telegram? Уведомления перестанут приходить.')">
+                        <button type="submit" class="text-sm text-muted hover:text-danger transition px-3 py-2">
+                            Отвязать
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        {% else %}
+            <!-- ============================ -->
+            <!-- НЕ ПРИВЯЗАН -->
+            <!-- ============================ -->
+            <div class="space-y-5" id="telegram-link-block">
+
+                <div class="bg-bg rounded-lg p-4 text-sm text-muted">
+                    <p class="font-medium text-ink mb-2">📱 Подключение за 10 секунд</p>
+                    <ol class="space-y-1 list-decimal list-inside">
+                        <li>Нажмите кнопку <b>«Открыть Telegram»</b> ниже</li>
+                        <li>В Telegram нажмите <b>Start</b></li>
+                        <li>Готово — вернётесь на сайт и увидите ✓</li>
+                    </ol>
+                </div>
+
+                <div class="flex flex-wrap gap-3 items-center">
+                    <button onclick="linkTelegram()" id="link-btn" class="btn btn-primary">
+                        Открыть Telegram
+                    </button>
+                    <button onclick="checkStatus()" id="check-btn" class="btn btn-secondary text-sm">
+                        Проверить статус
+                    </button>
+                </div>
+
+                <p id="status-text" class="text-xs text-faint"></p>
+            </div>
+
+            <script>
+                async function linkTelegram() {
+                    const btn = document.getElementById('link-btn');
+                    btn.disabled = true;
+                    btn.textContent = 'Готовим ссылку...';
+
+                    try {
+                        const response = await fetch('/settings/telegram/generate-link', {
+                            method: 'POST',
+                        });
+                        const data = await response.json();
+
+                        if (data.link) {
+                            window.open(data.link, '_blank');
+                            btn.textContent = 'Открыть Telegram';
+                            btn.disabled = false;
+
+                            document.getElementById('status-text').textContent =
+                                '✓ Открыли Telegram? Нажмите Start там, потом — "Проверить статус"';
+                        }
+                    } catch (e) {
+                        btn.textContent = 'Ошибка, попробуйте ещё раз';
+                        btn.disabled = false;
+                    }
+                }
+
+                async function checkStatus() {
+                    const btn = document.getElementById('check-btn');
+                    btn.disabled = true;
+                    btn.textContent = 'Проверяем...';
+
+                    try {
+                        const response = await fetch('/settings/telegram/status');
+                        const data = await response.json();
+
+                        if (data.linked) {
+                            document.getElementById('status-text').innerHTML =
+                                '<span style="color: #16A34A; font-weight: 600;">✓ Привязано! Обновляем страницу...</span>';
+                            setTimeout(() => window.location.reload(), 1000);
+                        } else {
+                            document.getElementById('status-text').textContent =
+                                'Пока не привязано. Открыли Telegram и нажали Start?';
+                            btn.textContent = 'Проверить статус';
+                            btn.disabled = false;
+                        }
+                    } catch (e) {
+                        btn.textContent = 'Ошибка';
+                        btn.disabled = false;
+                    }
+                }
+            </script>
+        {% endif %}
+    </div>
+
+    <!-- Опасная зона -->
+    <div class="border border-line rounded-lg p-6">
+        <h2 class="text-sm font-medium uppercase tracking-widest text-faint mb-4">Сессия</h2>
+        <form method="post" action="/auth/logout-web">
+            <button type="submit" class="text-sm text-muted hover:text-danger transition">
+                Выйти из аккаунта
+            </button>
+        </form>
+    </div>
+
+</section>
+{% endblock %}
